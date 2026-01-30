@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "npm audit || true",
+    "postinstall": "npm audit || true"
   },
   "dependencies": {
     "lucide-react": "^0.563.0",
