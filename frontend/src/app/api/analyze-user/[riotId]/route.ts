@@ -239,10 +239,11 @@ function analyze_game(timeline_data: any, participant_id: string = "1") {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { riotId: string } }
+  { params }: { params: Promise<{ riotId: string }> }
 ) {
   try {
-    const riotId = decodeURIComponent(params.riotId);
+    const { riotId } = await params;
+    const decodedRiotId = decodeURIComponent(riotId);
     const apiKey = process.env.RIOT_API_KEY;
 
     if (!apiKey) {
@@ -250,11 +251,11 @@ export async function GET(
     }
 
     // ID 분리
-    if (!riotId.includes("#")) {
+    if (!decodedRiotId.includes("#")) {
       return NextResponse.json({ error: "Riot ID 형식은 Name#Tag 여야 합니다." }, { status: 400 });
     }
 
-    const [game_name, tag_line] = riotId.split("#");
+    const [game_name, tag_line] = decodedRiotId.split("#");
     const riot_client = new RiotAPI(apiKey);
 
     // 계정 및 티어 정보 가져오기
