@@ -28,6 +28,8 @@ app.add_middleware(
     CORSMiddleware, 
     allow_origins=[
         "https://lol-ai-project.vercel.app",
+        "https://lol-ai-project-git-master-tuosm9390s-projects.vercel.app",
+        "https://lol-ai-project-1hcl3k9ym-tuosm9390s-projects.vercel.app",
         "http://localhost:3000"  # 로컬 개발용
     ],
     allow_credentials=True,
