@@ -1,0 +1,6 @@
+{
+  "venvPath": "backend",
+  "venv": "venv",
+  "reportMissingImports": "warning",
+  "pythonVersion": "3.11"
+}
