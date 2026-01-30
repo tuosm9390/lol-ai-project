@@ -173,7 +173,7 @@ export default function Home() {
         });
       }, 200);
 
-      const res = await fetch(`/api/analyze-user/${encodedId}`);
+      const res = await fetch(`https://lol-ai-project.onrender.com/analyze-user/${encodedId}`);
       clearInterval(progressInterval);
       setLoadingProgress(90);
       setLoadingStage('데이터 분석 완료...');

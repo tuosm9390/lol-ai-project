@@ -23,8 +23,17 @@ import asyncio
 from typing import Any
 
 app = FastAPI()
-# 프론트엔드(Next.js)와 통신 허용 (배포 시 프론트 URL로 제한 권장)
-app.add_middleware(CORSMiddleware, allow_origins=["*"])
+# 프론트엔드(Next.js)와 통신 허용
+app.add_middleware(
+    CORSMiddleware, 
+    allow_origins=[
+        "https://lol-ai-project.vercel.app",
+        "http://localhost:3000"  # 로컬 개발용
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"]
+)
 
 API_KEY = os.environ.get("RIOT_API_KEY", "")
 riot_client = RiotAPI(API_KEY) if API_KEY else None

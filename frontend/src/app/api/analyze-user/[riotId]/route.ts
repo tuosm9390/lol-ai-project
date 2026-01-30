@@ -279,13 +279,22 @@ export async function GET(
 
     const analysis_result = analyze_game(timeline_data);
 
-    // 솔랭 데이터 찾기
-    const solo_rank = league_data.find((item: any) => item['queueType'] === 'RANKED_SOLO_5x5');
-    if (solo_rank) {
-      const n_total = solo_rank['wins'] + solo_rank['losses'];
+    // 랭크 데이터 찾기 (솔랭优先, 없으면 자유랭크)
+    let ranked_data = league_data.find((item: any) => item['queueType'] === 'RANKED_SOLO_5x5');
+    let queue_type = '솔로 랭크';
+    
+    if (!ranked_data) {
+      ranked_data = league_data.find((item: any) => item['queueType'] === 'RANKED_FLEX_SR');
+      queue_type = '자유 랭크';
+    }
+    
+    if (ranked_data) {
+      const n_total = ranked_data['wins'] + ranked_data['losses'];
       
-      const all_ids = await riot_client.get_all_match_ids(puuid, solo_rank['wins'], solo_rank['losses']);
-      const match_details = await riot_client.get_match_details_batch(all_ids.slice(0, 20));
+      // 최소 10게임 이상인 경우에만 상세 분석
+      const games_to_analyze = Math.max(10, Math.min(n_total, 20));
+      const all_ids = await riot_client.get_all_match_ids(puuid, ranked_data['wins'], ranked_data['losses']);
+      const match_details = await riot_client.get_match_details_batch(all_ids.slice(0, games_to_analyze));
 
       const processed_matches = [];
       for (const match of match_details) {
@@ -338,10 +347,76 @@ export async function GET(
         "match_ids": all_ids,
         "analysis": analysis_result,
         "match_details": processed_matches,
+        "queue_type": queue_type
       });
     }
 
-    return NextResponse.json({ error: "솔로 랭크 데이터를 찾을 수 없습니다." }, { status: 404 });
+    // 랭크 데이터가 없는 경우: 최근 일반 게임으로 기본 분석 제공
+    const recent_matches = await riot_client.get_recent_match_ids(puuid, 10);
+    if (recent_matches.length > 0) {
+      const match_details = await riot_client.get_match_details_batch(recent_matches.slice(0, 5));
+      
+      const processed_matches = [];
+      for (const match of match_details) {
+        const my_stats = match['participants'].find((p: any) => p['puuid'] === puuid);
+        
+        if (my_stats) {
+          const participants_list = [];
+          for (const p of match['participants']) {
+            participants_list.push({
+              "puuid": p.get("puuid"),
+              "teamId": p.get("teamId"),
+              "win": p.get("win"),
+              "championName": p.get("championName"),
+              "teamPosition": p.get("teamPosition"),
+              "summonerName": `${p.get('riotIdGameName')}#${p.get('riotIdTagline')}`,
+              "kda_str": `${p.get('kills')}/${p.get('deaths')}/${p.get('assists')}`,
+              "kda_score": p.get("challenges", {}).get("kda", 0),
+              "visionScore": p.get("visionScore"),
+              "wards": `${p.get('wardsKilled')}/${p.get('wardsPlaced')}`,
+              "cs": p.get("totalMinionsKilled") + (p.get("neutralMinionsKilled", 0)),
+              "damage": p.get("totalDamageDealtToChampions"),
+              "gold": p.get("goldEarned"),
+              "kills": p.get('kills'),
+              "deaths": p.get('deaths'),
+              "assists": p.get('assists'),
+            });
+          }
+
+          processed_matches.push({
+            "matchId": match['matchId'],
+            "gameDuration": match['gameDuration'],
+            "my_stats": {
+              "win": my_stats['win'],
+              "championName": my_stats['championName'],
+              "kills": my_stats['kills'],
+              "deaths": my_stats['deaths'],
+              "assists": my_stats['assists'],
+            },
+            "participants": participants_list
+          });
+        }
+      }
+
+      return NextResponse.json({
+        "user_info": { "name": game_name, "tag": tag_line },
+        "league": league_data,
+        "total_matches": recent_matches.length,
+        "match_ids": recent_matches,
+        "analysis": analysis_result,
+        "match_details": processed_matches,
+        "queue_type": "일반 게임",
+        "message": "랭크 기록이 없어 최근 일반 게임을 분석합니다."
+      });
+    }
+
+    return NextResponse.json({ 
+      error: "랭크 데이터를 찾을 수 없습니다.",
+      message: "랭크 게임 기록이 없습니다. 랭크 게임을 플레이한 후 다시 시도해주세요.",
+      user_info: { "name": game_name, "tag": tag_line },
+      league: league_data,
+      analysis: analysis_result
+    }, { status: 200 });
 
   } catch (error) {
     console.error("API Error:", error);
