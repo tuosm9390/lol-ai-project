@@ -1,0 +1,9 @@
+backend/
+node_modules/
+.venv/
+.git/
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

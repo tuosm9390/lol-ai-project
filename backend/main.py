@@ -1,3 +1,11 @@
+import os
+from pathlib import Path
+# 로컬 .env 로드 (있으면 사용, 없어도 동작)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent / ".env")
+except Exception:
+    pass
 from fastapi import FastAPI
 from riot_api import RiotAPI
 try:
@@ -15,17 +23,23 @@ import asyncio
 from typing import Any
 
 app = FastAPI()
-# 프론트엔드(Next.js)와 통신 허용
+# 프론트엔드(Next.js)와 통신 허용 (배포 시 프론트 URL로 제한 권장)
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
-API_KEY = "RGAPI-37b1ff20-e350-43e2-98ef-6ce5240ce106"
-riot_client = RiotAPI(API_KEY)
+API_KEY = os.environ.get("RIOT_API_KEY", "")
+riot_client = RiotAPI(API_KEY) if API_KEY else None
 async_riot_client: Any = None
-if ASYNC_AVAILABLE and AsyncRiotAPI is not None:
+if API_KEY and ASYNC_AVAILABLE and AsyncRiotAPI is not None:
     async_riot_client = AsyncRiotAPI(API_KEY)
+
+@app.get("/")
+async def root():
+    return {"message": "LoL AI Backend API", "docs": "/docs"}
 
 @app.get("/analyze-user/{full_id}")
 async def analyze_user(full_id: str):
+    if not riot_client:
+        return {"error": "RIOT_API_KEY가 설정되지 않았습니다."}
     try:
         # 1. ID 분리 (예: "가나다#KR1")
         if "#" not in full_id:
