@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=69.5.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lol-ai-project"
+version = "0.1.0"
+description = "LoL AI Macro Coach"
+requires-python = ">=3.11,<3.12"
+
+dependencies = [
+    "fastapi==0.104.1",
+    "uvicorn[standard]==0.24.0",
+    "requests==2.31.0",
+    "redis==5.0.1",
+    "aiohttp==3.9.1",
+    "numpy==1.26.4"
+]
