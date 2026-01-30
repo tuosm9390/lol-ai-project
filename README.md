@@ -153,3 +153,4 @@ Riot ID 형식(`이름#태그`)으로 사용자 분석 데이터를 조회합니
 - [Riot Games API Documentation](https://developer.riotgames.com/docs)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Next.js Documentation](https://nextjs.org/docs)
+
