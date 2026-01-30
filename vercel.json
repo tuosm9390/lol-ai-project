@@ -2,8 +2,5 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "env": {
-    "RIOT_API_KEY": "@riot-api-key"
-  }
+  "framework": "nextjs"
 }
