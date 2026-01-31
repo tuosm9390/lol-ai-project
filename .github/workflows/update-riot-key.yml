@@ -1,0 +1,29 @@
+name: Update RIOT_API_KEY on Vercel
+
+# 'workflow_dispatch'를 사용해 수동으로 이 워크플로우를 실행할 수 있습니다.
+on:
+  workflow_dispatch:
+
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Project Settings
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Remove old RIOT_API_KEY
+        # 이전 키를 먼저 삭제해야 Vercel에서 오류 없이 추가할 수 있습니다.
+        run: vercel env rm RIOT_API_KEY production --yes --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Add new RIOT_API_KEY
+        run: vercel env add RIOT_API_KEY ${{ secrets.RIOT_API_KEY }} production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        # 환경 변수 변경사항을 적용하려면 새로 배포해야 합니다.
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
