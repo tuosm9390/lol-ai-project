@@ -419,7 +419,7 @@ export default function Home() {
           {analysis && analysis.match_details && analysis.match_details.length > visibleMatches && (
             <div className="mt-8 text-center">
               <button
-                onClick={() => setVisibleMatches(prev => prev + 5)}
+                onClick={() => setVisibleMatches(prev => prev + 10)}
                 className="px-8 py-3 rounded-lg font-bold text-white bg-gray-700 hover:bg-gray-800 transition-colors shadow-md"
               >
                 더보기
