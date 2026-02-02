@@ -142,6 +142,7 @@ export default function Home() {
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingStage, setLoadingStage] = useState('');
+  const [visibleMatches, setVisibleMatches] = useState(10);
 
   // 매치 클릭 시 토글 함수
   const toggleMatch = (id: string) => {
@@ -186,6 +187,7 @@ export default function Home() {
       } else {
         setAnalysis(data);
         setExpandedMatchId(null);
+        setVisibleMatches(10); // 새 분석 시 보이는 매치 수 초기화
       }
     } catch (err) {
       setError("서버와 통신 중 오류가 발생했습니다.");
@@ -274,7 +276,7 @@ export default function Home() {
             <section className="mt-12 space-y-4">
               <h3 className="text-2xl font-bold mb-6">최근 20게임 상세 분석</h3>
 
-              {analysis.match_details.map((match, matchIndex) => {
+              {analysis.match_details.slice(0, visibleMatches).map((match, matchIndex) => {
                 const myStats = match.my_stats;
                 const matchKey = String(match.matchId ?? `match-${matchIndex}`);
 
@@ -412,6 +414,17 @@ export default function Home() {
                 )
               })}
             </section>
+          )}
+
+          {analysis && analysis.match_details && analysis.match_details.length > visibleMatches && (
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => setVisibleMatches(prev => prev + 5)}
+                className="px-8 py-3 rounded-lg font-bold text-white bg-gray-700 hover:bg-gray-800 transition-colors shadow-md"
+              >
+                더보기
+              </button>
+            </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
