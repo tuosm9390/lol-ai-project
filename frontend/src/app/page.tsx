@@ -102,7 +102,7 @@ const TeamTable = ({ teamName, isWin, players, myPuuid }: { teamName: string; is
             <tr key={idx} className={`hover:bg-white/50 ${p.puuid === myPuuid ? 'bg-yellow-100/50' : ''}`}>
               <td className="p-2 pl-4">
                 <div className="flex items-center gap-2">
-                  <img src={`https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${p.championName}.png`} className="w-7 h-7 rounded-full" alt="" />
+                  <img src={`https://ddragon.leagueoflegends.com/cdn/16.2.1/img/champion/${p.championName}.png`} className="w-7 h-7 rounded-full" alt="" />
                   <div className="flex flex-col truncate">
                     <span className="font-bold text-gray-700 text-[11px] truncate">{p.summonerName.split('#')[0]}</span>
                     <span className="text-[9px] text-gray-400 uppercase">{p.teamPosition}</span>
@@ -302,7 +302,7 @@ export default function Home() {
                     ${myStats?.win ? 'border-l-8 border-l-blue-500 hover:border-blue-300' : 'border-l-8 border-l-red-500 hover:border-red-300'}`}
                     >
                       <div className="flex items-center gap-4">
-                        <img src={`https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${myStats?.championName}.png`} className="w-10 h-10" alt="" />
+                        <img src={`https://ddragon.leagueoflegends.com/cdn/16.2.1/img/champion/${myStats?.championName}.png`} className="w-10 h-10" alt="" />
                         <span className="text-xl text-black font-bold">{myStats?.championName}</span>
                         {/* <span className="px-2 py-1 bg-gray-100 rounded text-[10px] font-bold text-gray-500">{match.matchId}</span> */}
                       </div>
@@ -373,7 +373,7 @@ export default function Home() {
                                     <td className="p-3 pl-6">
                                       <div className="flex items-center gap-3">
                                         <img
-                                          src={`https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${p.championName}.png`}
+                                          src={`https://ddragon.leagueoflegends.com/cdn/16.2.1/img/champion/${p.championName}.png`}
                                           className="w-8 h-8 rounded-full shadow-sm border border-white"
                                           alt=""
                                         />
