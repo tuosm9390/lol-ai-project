@@ -424,7 +424,7 @@ export default function Home() {
                     {/* [상세 드롭다운 테이블] */}
                     {expandedMatchId === matchKey && (
                       <div className="bg-white dark:bg-gray-800 border-x border-b rounded-b-2xl overflow-hidden shadow-inner animate-in fade-in slide-in-from-top-2 duration-300">
-                        {match.teams.map((team) => (
+                        {match.teams?.map((team) => (
                           <div key={team.teamId} className={`p-4 ${team.win ? 'bg-blue-50/50 dark:bg-blue-900/50' : 'bg-red-50/50 dark:bg-red-900/50'} border-b dark:border-gray-700`}>
                             <h4 className={`text-sm font-bold ${team.win ? 'text-blue-700 dark:text-blue-200' : 'text-red-700 dark:text-red-200'} mb-2`}>
                               {team.teamId === 100 ? '블루팀' : '레드팀'} — {team.win ? '승리' : '패배'}
