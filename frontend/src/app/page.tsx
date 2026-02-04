@@ -96,18 +96,18 @@ const formatGameMode = (gameMode: string): string => {
 
 // [2. TeamTable 컴포넌트 - 컴포넌트 외부 선언]
 const TeamTable = ({ teamName, isWin, players, myPuuid }: { teamName: string; isWin: boolean; players: Participant[] | undefined; myPuuid?: string }) => (
-  <div className={`mb-4 rounded-xl border overflow-hidden ${isWin ? 'border-blue-200' : 'border-red-200'}`}>
-    <div className={`px-4 py-2 flex justify-between items-center ${isWin ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
+  <div className={`mb-4 rounded-xl border overflow-hidden ${isWin ? 'border-blue-200 dark:border-blue-700' : 'border-red-200 dark:border-red-700'}`}>
+    <div className={`px-4 py-2 flex justify-between items-center ${isWin ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'}`}>
       <span className="font-black text-sm uppercase">{teamName} ({isWin ? 'Victory' : 'Defeat'})</span>
       <div className="text-xs font-bold">
         <span className="opacity-70 mr-2">Total KDA</span>
         <span className="text-base">{calculateTeamKDA(players)}</span>
       </div>
     </div>
-    <div className={`overflow-x-auto ${isWin ? 'bg-blue-50/30' : 'bg-red-50/30'}`}>
+    <div className={`overflow-x-auto ${isWin ? 'bg-blue-50/30 dark:bg-blue-900/10' : 'bg-red-50/30 dark:bg-red-900/10'}`}>
       <table className="w-full text-sm table-fixed">
-        <thead className={`text-[10px] uppercase font-bold ${isWin ? 'text-blue-400' : 'text-red-400'}`}>
-          <tr className="border-b border-gray-100">
+        <thead className={`text-[10px] uppercase font-bold ${isWin ? 'text-blue-400 dark:text-blue-300' : 'text-red-400 dark:text-red-300'}`}>
+          <tr className="border-b border-gray-100 dark:border-gray-700">
             <th className="p-2 w-[25%] pl-4 text-left">Champion / Player</th>
             <th className="p-2 w-[20%] text-center">KDA</th>
             <th className="p-2 w-[20%] text-center">Damage</th>
@@ -115,34 +115,34 @@ const TeamTable = ({ teamName, isWin, players, myPuuid }: { teamName: string; is
             <th className="p-2 w-[20%] text-right pr-4">Resources</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
           {players?.map((p, idx) => (
-            <tr key={idx} className={`hover:bg-white/50 ${p.puuid === myPuuid ? 'bg-yellow-100/50' : ''}`}>
+            <tr key={idx} className={`hover:bg-white/50 dark:hover:bg-gray-700/50 ${p.puuid === myPuuid ? 'bg-yellow-100/50 dark:bg-yellow-900/50' : ''}`}>
               <td className="p-2 pl-4">
                 <div className="flex items-center gap-2">
                   <img src={`https://ddragon.leagueoflegends.com/cdn/16.2.1/img/champion/${p.championName}.png`} className="w-7 h-7 rounded-full" alt="" />
                   <div className="flex flex-col truncate">
-                    <span className="font-bold text-gray-700 text-[11px] truncate">{p.summonerName.split('#')[0]}</span>
-                    <span className="text-[9px] text-gray-400 uppercase">{p.teamPosition}</span>
+                    <span className="font-bold text-gray-700 text-[11px] truncate dark:text-gray-200">{p.summonerName.split('#')[0]}</span>
+                    <span className="text-[9px] text-gray-400 uppercase dark:text-gray-500">{p.teamPosition}</span>
                   </div>
                 </div>
               </td>
               <td className="p-2 text-center text-[11px]">
-                <div className="font-bold">{p.kda_str}</div>
-                <div className="text-[9px] text-gray-400">{p.kda_score?.toFixed(2)}</div>
+                <div className="font-bold text-gray-700 dark:text-gray-200">{p.kda_str}</div>
+                <div className="text-[9px] text-gray-400 dark:text-gray-500">{p.kda_score?.toFixed(2)}</div>
               </td>
               <td className="p-2">
                 <div className="w-full max-w-[60px] mx-auto text-center">
-                  <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-1 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-600">
                     <div className="h-full bg-red-400" style={{ width: `${Math.min((p.damage || 0) / 500, 100)}%` }}></div>
                   </div>
-                  <span className="text-[9px] text-gray-500">{formatNumber(p.damage)}</span>
+                  <span className="text-[9px] text-gray-500 dark:text-gray-400">{formatNumber(p.damage)}</span>
                 </div>
               </td>
-              <td className="p-2 text-center text-[11px] text-gray-500">{p.visionScore}</td>
+              <td className="p-2 text-center text-[11px] text-gray-500 dark:text-gray-400">{p.visionScore}</td>
               <td className="p-2 pr-4 text-right">
-                <div className="text-[11px] font-bold text-yellow-600">{formatNumber(p.gold)}</div>
-                <div className="text-[9px] text-gray-400">{p.cs} CS | {p.wards} W</div>
+                <div className="text-[11px] font-bold text-yellow-600 dark:text-yellow-400">{formatNumber(p.gold)}</div>
+                <div className="text-[9px] text-gray-400 dark:text-gray-500">{p.cs} CS | {p.wards} W</div>
               </td>
             </tr>
           ))}
