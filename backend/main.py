@@ -138,6 +138,7 @@ async def analyze_user(full_id: str):
                 if my_stats:
                     processed_matches.append({
                         "matchId": match['matchId'],
+                        "gameMode": match['gameMode'], # Add gameMode here
                         "gameDuration": match['gameDuration'],
                         "my_stats": { # 기존 요약 카드에 쓸 데이터
                             "win": my_stats['win'],
