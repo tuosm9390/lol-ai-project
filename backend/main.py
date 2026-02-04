@@ -20,7 +20,7 @@ except ImportError:
 from analyzer import analyze_game
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
-from typing import Any
+from typing import Any, Dict # Dict 임포트 추가
 import requests # Added for Data Dragon
 import json # Added for Data Dragon
 
@@ -51,41 +51,59 @@ SUMMONER_SPELLS: Dict[str, Any] = {}
 ITEMS: Dict[str, Any] = {}
 
 def get_latest_ddragon_version():
+    print("--- Data Dragon 버전 확인 시작 ---")
     try:
         response = requests.get("https://ddragon.leagueoflegends.com/api/versions.json")
         response.raise_for_status()
-        return response.json()[0] # Get the latest version
+        latest_version = response.json()[0] # Get the latest version
+        print(f"최신 Data Dragon 버전: {latest_version}")
+        return latest_version
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching Data Dragon version: {e}")
+        print(f"Error fetching Data Dragon version: {e} (Fallback to 13.24.1)")
         return "13.24.1" # Fallback to a known version
 
 def load_ddragon_data(version: str):
     global SUMMONER_SPELLS, ITEMS, DDRAGON_VERSION
     DDRAGON_VERSION = version
     base_url = f"https://ddragon.leagueoflegends.com/cdn/{version}/data/ko_KR" # Using Korean locale
+    print(f"--- Data Dragon 데이터 로드 시작 (버전: {version}, Locale: ko_KR) ---")
 
     # Load Summoner Spells
     try:
+        print(f"소환사 주문 데이터 로드 시도: {base_url}/summoner.json")
         response = requests.get(f"{base_url}/summoner.json")
         response.raise_for_status()
         summoner_data = response.json().get("data", {})
-        # Reformat for easier lookup by 'key' field (which is the integer ID as string)
         SUMMONER_SPELLS = {spell_info['key']: spell_info for spell_id, spell_info in summoner_data.items()}
-        print(f"Loaded {len(SUMMONER_SPELLS)} summoner spells.")
+        print(f"로드된 소환사 주문 개수: {len(SUMMONER_SPELLS)}")
     except requests.exceptions.RequestException as e:
-        print(f"Error loading summoner spells: {e}")
+        print(f"소환사 주문 로드 중 에러: {e}")
+        SUMMONER_SPELLS = {}
+    except json.JSONDecodeError as e:
+        print(f"소환사 주문 JSON 파싱 에러: {e}")
+        SUMMONER_SPELLS = {}
+    except Exception as e:
+        print(f"알 수 없는 소환사 주문 로드 에러: {e}")
         SUMMONER_SPELLS = {}
 
     # Load Items
     try:
+        print(f"아이템 데이터 로드 시도: {base_url}/item.json")
         response = requests.get(f"{base_url}/item.json")
         response.raise_for_status()
         item_data = response.json().get("data", {})
         ITEMS = item_data
-        print(f"Loaded {len(ITEMS)} items.")
+        print(f"로드된 아이템 개수: {len(ITEMS)}")
     except requests.exceptions.RequestException as e:
-        print(f"Error loading items: {e}")
+        print(f"아이템 로드 중 에러: {e}")
         ITEMS = {}
+    except json.JSONDecodeError as e:
+        print(f"아이템 JSON 파싱 에러: {e}")
+        ITEMS = {}
+    except Exception as e:
+        print(f"알 수 없는 아이템 로드 에러: {e}")
+        ITEMS = {}
+    print("--- Data Dragon 데이터 로드 완료 ---")
 
 # Load Data Dragon data on startup
 latest_version = get_latest_ddragon_version()
@@ -198,7 +216,8 @@ async def get_current_game(full_id: str):
 @app.get("/analyze-user/{full_id}")
 async def analyze_user(full_id: str):
     if not riot_client:
-        return {"error": "RIOT_API_KEY가 설정되지 않았습니다."}    try:
+        return {"error": "RIOT_API_KEY가 설정되지 않았습니다."}    
+    try:
         # 1. ID 분리 (예: "가나다#KR1")
         if "#" not in full_id:
             return {"error": "Riot ID 형식은 Name#Tag 여야 합니다."}
