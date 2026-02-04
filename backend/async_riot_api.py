@@ -122,7 +122,8 @@ class AsyncRiotAPI:
                     "gameMode": info.get("gameMode"),
                     "queueId": info.get("queueId"),
                     "gameDuration": info.get("gameDuration"),
-                    "participants": participants_data # Use the processed participant data
+                    "participants": participants_data, # Use the processed participant data
+                    "teams": info.get("teams", []) # Add teams data here
                 })
         
         return details

@@ -69,8 +69,8 @@ def load_ddragon_data(version: str):
         response = requests.get(f"{base_url}/summoner.json")
         response.raise_for_status()
         summoner_data = response.json().get("data", {})
-        # Reformat for easier lookup by ID (integer)
-        SUMMONER_SPELLS = {str(spell_info['id']): spell_info for spell_id, spell_info in summoner_data.items()}
+        # Reformat for easier lookup by 'key' field (which is the integer ID as string)
+        SUMMONER_SPELLS = {spell_info['key']: spell_info for spell_id, spell_info in summoner_data.items()}
         print(f"Loaded {len(SUMMONER_SPELLS)} summoner spells.")
     except requests.exceptions.RequestException as e:
         print(f"Error loading summoner spells: {e}")
@@ -167,12 +167,12 @@ async def root():
             processed_spell1 = {
                 "id": summoner_spell_1_id,
                 "name": spell1_info['name'] if spell1_info else "Unknown",
-                "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell1_info['image']['full']}" if spell1_info else ""
+                "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell1_info['image']['full']}" if spell1_info and 'image' in spell1_info else ""
             }
             processed_spell2 = {
                 "id": summoner_spell_2_id,
                 "name": spell2_info['name'] if spell2_info else "Unknown",
-                "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell2_info['image']['full']}" if spell2_info else ""
+                "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell2_info['image']['full']}" if spell2_info and 'image' in spell2_info else ""
             }
     
             processed_participants.append({
@@ -262,12 +262,12 @@ async def root():
                     processed_spell1 = {
                         "id": summoner_spell_1_id,
                         "name": spell1_info['name'] if spell1_info else "Unknown",
-                        "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell1_info['image']['full']}" if spell1_info else ""
+                        "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell1_info['image']['full']}" if spell1_info and 'image' in spell1_info else ""
                     }
                     processed_spell2 = {
                         "id": summoner_spell_2_id,
                         "name": spell2_info['name'] if spell2_info else "Unknown",
-                        "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell2_info['image']['full']}" if spell2_info else ""
+                        "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell2_info['image']['full']}" if spell2_info and 'image' in spell2_info else ""
                     }
 
                     # Items
@@ -323,7 +323,8 @@ async def root():
                             "deaths": my_stats['deaths'],
                             "assists": my_stats['assists'],
                         },
-                        "participants": participants_list # 10명 전체 데이터
+                        "participants": participants_list, # 10명 전체 데이터
+                        "teams": match['teams'] # Add teams data here
                     })
 
             analysis_result = analyze_game(timeline_data)

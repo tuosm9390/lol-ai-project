@@ -48,6 +48,30 @@ interface MyStats {
   assists: number;
 }
 
+interface Ban {
+  championId: number;
+  pickTurn: number;
+}
+
+interface Objective {
+  first: boolean;
+  kills: number;
+}
+
+interface Objectives {
+  baron: Objective;
+  dragon: Objective;
+  tower: Objective;
+  // Add other objectives if needed
+}
+
+interface TeamDetail {
+  teamId: number;
+  win: boolean;
+  bans: Ban[];
+  objectives: Objectives;
+}
+
 interface MatchDetail {
   matchId: string;
   gameMode: string;
@@ -56,6 +80,7 @@ interface MatchDetail {
   gameDuration: number;
   my_stats: MyStats;
   participants: Participant[];
+  teams: TeamDetail[]; // Add teams data
 }
 
 interface LeagueInfo {
@@ -141,7 +166,7 @@ const TeamTable = ({ teamName, isWin, players, myPuuid }: { teamName: string; is
             <tr key={idx} className={`hover:bg-white/50 dark:hover:bg-gray-700/50 ${p.puuid === myPuuid ? 'bg-yellow-100/50 dark:bg-yellow-900/50' : ''}`}>
               <td className="p-2 pl-4">
                 <div className="flex items-center gap-2">
-                  <img src={`https://ddragon.leagueoflegends.com/cdn/16.2.1/img/champion/${p.championName}.png`} className="w-7 h-7 rounded-full" alt="" />
+                  <img src={`https://ddragon.leagueoflegends.com/cdn/16.3.1/img/champion/${p.championName}.png`} className="w-7 h-7 rounded-full" alt="" />
                   <div className="flex flex-col truncate">
                     <span className="font-bold text-gray-700 text-[11px] truncate dark:text-gray-200">{p.summonerName.split('#')[0]}</span>
                     <span className="text-[9px] text-gray-400 uppercase dark:text-gray-500">{p.teamPosition}</span>
@@ -161,9 +186,26 @@ const TeamTable = ({ teamName, isWin, players, myPuuid }: { teamName: string; is
                 </div>
               </td>
               <td className="p-2 text-center text-[11px] text-gray-500 dark:text-gray-400">{p.visionScore}</td>
+              <td className="p-2 text-center">
+                <div className="flex flex-col items-center gap-1">
+                  {p.summonerSpell1 && p.summonerSpell1.icon && (
+                    <img src={p.summonerSpell1.icon} alt={p.summonerSpell1.name} className="w-5 h-5 rounded" />
+                  )}
+                  {p.summonerSpell2 && p.summonerSpell2.icon && (
+                    <img src={p.summonerSpell2.icon} alt={p.summonerSpell2.name} className="w-5 h-5 rounded" />
+                  )}
+                </div>
+              </td>
               <td className="p-2 pr-4 text-right">
-                <div className="text-[11px] font-bold text-yellow-600 dark:text-yellow-400">{formatNumber(p.gold)}</div>
-                <div className="text-[9px] text-gray-400 dark:text-gray-500">{p.cs} CS | {p.wards} W</div>
+                <div className="flex flex-wrap justify-end gap-1">
+                  {p.items?.map((item, itemIdx) => (
+                    item ? (
+                      <img key={itemIdx} src={item.icon} alt={item.name} className="w-6 h-6 rounded" />
+                    ) : (
+                      <div key={itemIdx} className="w-6 h-6 rounded bg-gray-200 dark:bg-gray-700"></div>
+                    )
+                  ))}
+                </div>
               </td>
             </tr>
           ))}
@@ -352,7 +394,7 @@ export default function Home() {
                     ${myStats?.win ? 'border-l-8 border-l-blue-500 hover:border-blue-300 dark:hover:border-blue-600' : 'border-l-8 border-l-red-500 hover:border-red-300 dark:hover:border-red-600'}`}
                     >
                       <div className="flex items-center gap-4">
-                        <img src={`https://ddragon.leagueoflegends.com/cdn/16.2.1/img/champion/${myStats?.championName}.png`} className="w-10 h-10" alt="" />
+                        <img src={`https://ddragon.leagueoflegends.com/cdn/16.3.1/img/champion/${myStats?.championName}.png`} className="w-10 h-10" alt="" />
                         <div>
                           <span className="text-xl text-black dark:text-gray-100 font-bold">{myStats?.championName}</span>
                           <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">{formatGameMode(match.gameMode, match.queueType)}</p>
@@ -382,6 +424,39 @@ export default function Home() {
                     {/* [상세 드롭다운 테이블] */}
                     {expandedMatchId === matchKey && (
                       <div className="bg-white dark:bg-gray-800 border-x border-b rounded-b-2xl overflow-hidden shadow-inner animate-in fade-in slide-in-from-top-2 duration-300">
+                        {match.teams.map((team) => (
+                          <div key={team.teamId} className={`p-4 ${team.win ? 'bg-blue-50/50 dark:bg-blue-900/50' : 'bg-red-50/50 dark:bg-red-900/50'} border-b dark:border-gray-700`}>
+                            <h4 className={`text-sm font-bold ${team.win ? 'text-blue-700 dark:text-blue-200' : 'text-red-700 dark:text-red-200'} mb-2`}>
+                              {team.teamId === 100 ? '블루팀' : '레드팀'} — {team.win ? '승리' : '패배'}
+                            </h4>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xs text-gray-600 dark:text-gray-400">밴:</span>
+                              {team.bans.map((ban, banIdx) => (
+                                ban.championId !== -1 ? (
+                                  <img
+                                    key={banIdx}
+                                    src={`https://ddragon.leagueoflegends.com/cdn/16.3.1/img/champion/${ban.championId}.png`} // Assuming -1 is a valid placeholder for no ban
+                                    alt={`Ban ${banIdx + 1}`}
+                                    className="w-5 h-5 rounded-full border border-gray-300 dark:border-gray-600"
+                                  />
+                                ) : (
+                                  <div key={banIdx} className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600"></div>
+                                )
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-gray-700 dark:text-gray-300">
+                              <span>
+                                <span className="font-bold">Baron:</span> {team.objectives.baron.kills} ({team.objectives.baron.first ? 'First' : ''})
+                              </span>
+                              <span>
+                                <span className="font-bold">Dragon:</span> {team.objectives.dragon.kills} ({team.objectives.dragon.first ? 'First' : ''})
+                              </span>
+                              <span>
+                                <span className="font-bold">Tower:</span> {team.objectives.tower.kills} ({team.objectives.tower.first ? 'First' : ''})
+                              </span>
+                            </div>
+                          </div>
+                        ))}
                         <table className="w-full text-sm table-fixed border-collapse">
                           <thead className="bg-gray-50 dark:bg-gray-700 text-[11px] text-gray-400 uppercase font-bold border-b dark:border-gray-600">
                             <tr>
@@ -426,7 +501,7 @@ export default function Home() {
                                     <td className="p-3 pl-6">
                                       <div className="flex items-center gap-3">
                                         <img
-                                          src={`https://ddragon.leagueoflegends.com/cdn/16.2.1/img/champion/${p.championName}.png`}
+                                          src={`https://ddragon.leagueoflegends.com/cdn/16.3.1/img/champion/${p.championName}.png`}
                                           className="w-8 h-8 rounded-full shadow-sm border border-white dark:border-gray-600"
                                           alt=""
                                         />
@@ -533,7 +608,7 @@ export default function Home() {
 
             {/* 3. 멘탈 분석 카드 */}
             <div className="p-6 bg-white border rounded-2xl shadow-lg border-t-4 border-t-red-500 dark:bg-gray-800 dark:border-gray-700 dark:border-t-red-700">
-              <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">🧠 AI 멘탈 진단</h3>
+              <h3 className="text-lg font-bold mb-4 flex items-center text-gray-900 dark:text-gray-100">🧠 AI 멘탈 진단</h3>
               <div className="text-4xl font-black text-red-500 mb-2 dark:text-red-400">
                 {analysis.analysis.tilt_index > 100 ? "위험" : "안정"}
               </div>

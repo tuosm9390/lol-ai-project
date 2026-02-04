@@ -143,7 +143,7 @@ const CurrentGamePage: React.FC = () => {
                   {currentGame.participants?.filter(p => p.teamId === teamId).map((participant, pIdx) => (
                     <div key={pIdx} className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700">
                       <img
-                        src={`https://ddragon.leagueoflegends.com/cdn/14.3.1/img/champion/${participant.championName}.png`} // Use dynamic version
+                        src={`https://ddragon.leagueoflegends.com/cdn/16.3.1/img/champion/${participant.championName}.png`} // Use dynamic version
                         alt={participant.championName}
                         className="w-10 h-10 rounded-full mr-3 border border-gray-300 dark:border-gray-600"
                       />
