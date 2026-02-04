@@ -129,76 +129,76 @@ QUEUE_MAPPING = {
 
 @app.get("/")
 async def root():
-            return {"message": "LoL AI Backend API", "docs": "/docs"}
+    return {"message": "LoL AI Backend API", "docs": "/docs"}
+
+@app.get("/current-game/{full_id}")
+async def get_current_game(full_id: str):
+    if not riot_client:
+        return {"error": "RIOT_API_KEY가 설정되지 않았습니다."}
     
-    @app.get("/current-game/{full_id}")
-    async def get_current_game(full_id: str):
-        if not riot_client:
-            return {"error": "RIOT_API_KEY가 설정되지 않았습니다."}
+    if "#" not in full_id:
+        return {"error": "Riot ID 형식은 Name#Tag 여야 합니다."}
         
-        if "#" not in full_id:
-                return {"error": "Riot ID 형식은 Name#Tag 여야 합니다."}
-            
-        game_name, tag_line = full_id.split("#")
-        
-        puuid = riot_client.get_puuid_by_riot_id(game_name, tag_line)
-        if not puuid:
-            return {"error": "해당 Riot ID를 찾을 수 없습니다."}
-        
-        encrypted_summoner_id = riot_client._get_summoner_id_by_puuid(puuid)
-        if not encrypted_summoner_id:
-            return {"error": "소환사 ID를 찾을 수 없습니다."}
-        
-        active_game_data = riot_client.get_active_game_by_summoner_id(encrypted_summoner_id)
-        
-        if active_game_data is None:
-            return {"status": "not_in_game", "message": f"{game_name}#{tag_line}님은 현재 게임 중이 아닙니다."}
-        
-        # Process active game data for frontend display
-        processed_participants = []
-        for p in active_game_data.get("participants", []):
-            # Summoner Spells
-            summoner_spell_1_id = str(p.get("spell1Id"))
-            summoner_spell_2_id = str(p.get("spell2Id"))
-            
-            spell1_info = SUMMONER_SPELLS.get(summoner_spell_1_id)
-            spell2_info = SUMMONER_SPELLS.get(summoner_spell_2_id)
+    game_name, tag_line = full_id.split("#")
     
-            processed_spell1 = {
-                "id": summoner_spell_1_id,
-                "name": spell1_info['name'] if spell1_info else "Unknown",
-                "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell1_info['image']['full']}" if spell1_info and 'image' in spell1_info else ""
-            }
-            processed_spell2 = {
-                "id": summoner_spell_2_id,
-                "name": spell2_info['name'] if spell2_info else "Unknown",
-                "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell2_info['image']['full']}" if spell2_info and 'image' in spell2_info else ""
-            }
+    puuid = riot_client.get_puuid_by_riot_id(game_name, tag_line)
+    if not puuid:
+        return {"error": "해당 Riot ID를 찾을 수 없습니다."}
     
-            processed_participants.append({
-                "summonerName": p.get("summonerName"),
-                "championName": p.get("championName"),
-                "teamId": p.get("teamId"),
-                "summonerSpell1": processed_spell1,
-                "summonerSpell2": processed_spell2,
-                # Add other relevant active game participant data
-            })
+    encrypted_summoner_id = riot_client._get_summoner_id_by_puuid(puuid)
+    if not encrypted_summoner_id:
+        return {"error": "소환사 ID를 찾을 수 없습니다."}
     
-        return {
-            "status": "in_game",
-            "gameId": active_game_data.get("gameId"),
-            "gameMode": active_game_data.get("gameMode"),
-            "gameType": active_game_data.get("gameType"),
-            "gameStartTime": active_game_data.get("gameStartTime"),
-            "mapId": active_game_data.get("mapId"),
-            "queueType": QUEUE_MAPPING.get(active_game_data.get("gameQueueConfigId"), "알 수 없는 모드"),
-            "participants": processed_participants,
+    active_game_data = riot_client.get_active_game_by_summoner_id(encrypted_summoner_id)
+    
+    if active_game_data is None:
+        return {"status": "not_in_game", "message": f"{game_name}#{tag_line}님은 현재 게임 중이 아닙니다."}
+    
+    # Process active game data for frontend display
+    processed_participants = []
+    for p in active_game_data.get("participants", []):
+        # Summoner Spells
+        summoner_spell_1_id = str(p.get("spell1Id"))
+        summoner_spell_2_id = str(p.get("spell2Id"))
+        
+        spell1_info = SUMMONER_SPELLS.get(summoner_spell_1_id)
+        spell2_info = SUMMONER_SPELLS.get(summoner_spell_2_id)
+
+        processed_spell1 = {
+            "id": summoner_spell_1_id,
+            "name": spell1_info['name'] if spell1_info else "Unknown",
+            "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell1_info['image']['full']}" if spell1_info and 'image' in spell1_info else ""
         }
-    
-    @app.get("/analyze-user/{full_id}")
-    async def analyze_user(full_id: str):
-        if not riot_client:
-            return {"error": "RIOT_API_KEY가 설정되지 않았습니다."}    try:
+        processed_spell2 = {
+            "id": summoner_spell_2_id,
+            "name": spell2_info['name'] if spell2_info else "Unknown",
+            "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell2_info['image']['full']}" if spell2_info and 'image' in spell2_info else ""
+        }
+
+        processed_participants.append({
+            "summonerName": p.get("summonerName"),
+            "championName": p.get("championName"),
+            "teamId": p.get("teamId"),
+            "summonerSpell1": processed_spell1,
+            "summonerSpell2": processed_spell2,
+            # Add other relevant active game participant data
+        })
+
+    return {
+        "status": "in_game",
+        "gameId": active_game_data.get("gameId"),
+        "gameMode": active_game_data.get("gameMode"),
+        "gameType": active_game_data.get("gameType"),
+        "gameStartTime": active_game_data.get("gameStartTime"),
+        "mapId": active_game_data.get("mapId"),
+        "queueType": QUEUE_MAPPING.get(active_game_data.get("gameQueueConfigId"), "알 수 없는 모드"),
+        "participants": processed_participants,
+    }
+
+@app.get("/analyze-user/{full_id}")
+async def analyze_user(full_id: str):
+    if not riot_client:
+        return {"error": "RIOT_API_KEY가 설정되지 않았습니다."}    try:
         # 1. ID 분리 (예: "가나다#KR1")
         if "#" not in full_id:
             return {"error": "Riot ID 형식은 Name#Tag 여야 합니다."}
