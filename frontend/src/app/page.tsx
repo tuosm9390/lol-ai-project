@@ -2,8 +2,22 @@
 
 import { useState } from 'react';
 import ThemeToggleButton from './components/ThemeToggleButton';
+import Link from 'next/link'; // Import Link
 
 // 타입 정의
+
+interface Spell {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+interface Item {
+  id: number;
+  name: string;
+  icon: string;
+}
+
 interface Participant {
   puuid?: string;
   teamId?: number;
@@ -21,6 +35,9 @@ interface Participant {
   kills?: number;
   deaths?: number;
   assists?: number;
+  summonerSpell1: Spell; // Add summoner spell 1
+  summonerSpell2: Spell; // Add summoner spell 2
+  items: (Item | null)[]; // Add items
 }
 
 interface MyStats {
@@ -33,7 +50,9 @@ interface MyStats {
 
 interface MatchDetail {
   matchId: string;
-  gameMode: string; // Add gameMode
+  gameMode: string;
+  queueId: number; // Add queueId
+  queueType: string; // Add queueType
   gameDuration: number;
   my_stats: MyStats;
   participants: Participant[];
@@ -78,12 +97,13 @@ const calculateTeamKDA = (participants: Participant[] | undefined): string => {
   return `${k} / ${d} / ${a}`;
 };
 
-const formatGameMode = (gameMode: string): string => {
+const formatGameMode = (gameMode: string, queueType: string): string => {
+  if (gameMode === 'CLASSIC') {
+    return queueType; // Use the human-readable queueType provided by the backend
+  }
   switch (gameMode) {
     case 'ARAM':
       return '무작위 총력전';
-    case 'CLASSIC':
-      return '소환사의 협곡';
     case 'TFT':
       return '전략적 팀 전투';
     case 'URF':
@@ -112,7 +132,8 @@ const TeamTable = ({ teamName, isWin, players, myPuuid }: { teamName: string; is
             <th className="p-2 w-[20%] text-center">KDA</th>
             <th className="p-2 w-[20%] text-center">Damage</th>
             <th className="p-2 w-[15%] text-center">Vision</th>
-            <th className="p-2 w-[20%] text-right pr-4">Resources</th>
+            <th className="p-2 w-[10%] text-center">Spells</th>
+            <th className="p-2 w-[30%] text-right pr-4">Items</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -220,7 +241,15 @@ export default function Home() {
 
   return (
     <div className="p-10 font-sans max-w-4xl mx-auto">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between items-center mb-4">
+        <nav className="flex gap-4">
+          <Link href="/" className="text-blue-600 dark:text-blue-400 hover:underline">
+            분석
+          </Link>
+          <Link href="/current-game" className="text-blue-600 dark:text-blue-400 hover:underline">
+            현재 게임
+          </Link>
+        </nav>
         <ThemeToggleButton />
       </div>
       <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">LoL AI 매크로 코치</h1>
@@ -326,7 +355,7 @@ export default function Home() {
                         <img src={`https://ddragon.leagueoflegends.com/cdn/16.2.1/img/champion/${myStats?.championName}.png`} className="w-10 h-10" alt="" />
                         <div>
                           <span className="text-xl text-black dark:text-gray-100 font-bold">{myStats?.championName}</span>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">{formatGameMode(match.gameMode)}</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">{formatGameMode(match.gameMode, match.queueType)}</p>
                         </div>
                       </div>
                       <div className="font-bold text-lg text-gray-900 dark:text-gray-100">
@@ -356,11 +385,12 @@ export default function Home() {
                         <table className="w-full text-sm table-fixed border-collapse">
                           <thead className="bg-gray-50 dark:bg-gray-700 text-[11px] text-gray-400 uppercase font-bold border-b dark:border-gray-600">
                             <tr>
-                              <th className="p-3 w-[25%] text-left pl-6">Champion / Player</th>
+                              <th className="p-3 w-[20%] text-left pl-6">Champion / Player</th>
                               <th className="p-3 w-[15%] text-center">KDA</th>
-                              <th className="p-3 w-[20%] text-center">Damage</th>
+                              <th className="p-3 w-[15%] text-center">Damage</th>
                               <th className="p-3 w-[10%] text-center">Vision</th>
-                              <th className="p-3 w-[30%] text-right pr-6">Resources (Gold/CS/Ward)</th>
+                              <th className="p-3 w-[10%] text-center">Spells</th>
+                              <th className="p-3 w-[30%] text-right pr-6">Items</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -375,7 +405,7 @@ export default function Home() {
                                   {/* 팀 구분 헤더 (1번째, 6번째 행 직전에 표시) */}
                                   {isTeamFirstRow && (
                                     <tr key={`header-${idx}`} className={`${p.win ? 'bg-blue-50/50 dark:bg-blue-900/50' : 'bg-red-50/50 dark:bg-red-900/50'} border-y border-gray-100 dark:border-gray-700`}>
-                                      <td colSpan={5} className="px-6 py-2">
+                                      <td colSpan={6} className="px-6 py-2">
                                         <div className="flex justify-between items-center">
                                           <span className={`font-black text-[11px] uppercase ${p.win ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
                                             {isBlueTeam ? 'Blue Team' : 'Red Team'} — {p.win ? 'Victory' : 'Defeat'}
@@ -421,9 +451,26 @@ export default function Home() {
                                     <td className="p-3 text-center text-gray-600 font-medium text-[12px] dark:text-gray-300">
                                       {p.visionScore}
                                     </td>
+                                    <td className="p-3 text-center">
+                                      <div className="flex flex-col items-center gap-1">
+                                        {p.summonerSpell1 && p.summonerSpell1.icon && (
+                                          <img src={p.summonerSpell1.icon} alt={p.summonerSpell1.name} className="w-5 h-5 rounded" />
+                                        )}
+                                        {p.summonerSpell2 && p.summonerSpell2.icon && (
+                                          <img src={p.summonerSpell2.icon} alt={p.summonerSpell2.name} className="w-5 h-5 rounded" />
+                                        )}
+                                      </div>
+                                    </td>
                                     <td className="p-3 pr-6 text-right">
-                                      <div className="text-[12px] font-bold text-yellow-600 dark:text-yellow-400">{formatNumber(p.gold)} G</div>
-                                      <div className="text-[10px] text-gray-400 dark:text-gray-500">{p.cs} CS | Ward {p.wards}</div>
+                                      <div className="flex flex-wrap justify-end gap-1">
+                                        {p.items?.map((item, itemIdx) => (
+                                          item ? (
+                                            <img key={itemIdx} src={item.icon} alt={item.name} className="w-6 h-6 rounded" />
+                                          ) : (
+                                            <div key={itemIdx} className="w-6 h-6 rounded bg-gray-200 dark:bg-gray-700"></div>
+                                          )
+                                        ))}
+                                      </div>
                                     </td>
                                   </tr>
                                 </>

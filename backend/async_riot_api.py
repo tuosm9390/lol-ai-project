@@ -84,11 +84,45 @@ class AsyncRiotAPI:
         for result in results:
             if isinstance(result, dict) and result:
                 info = result.get('info', {})
+                participants_data = []
+                for participant in info.get("participants", []):
+                    participants_data.append({
+                        "puuid": participant.get("puuid"),
+                        "teamId": participant.get("teamId"),
+                        "win": participant.get("win"),
+                        "championName": participant.get("championName"),
+                        "teamPosition": participant.get("teamPosition"),
+                        "summonerName": participant.get("summonerName"),
+                        "riotIdGameName": participant.get("riotIdGameName"),
+                        "riotIdTagline": participant.get("riotIdTagline"),
+                        "kills": participant.get("kills"),
+                        "deaths": participant.get("deaths"),
+                        "assists": participant.get("assists"),
+                        "challenges": participant.get("challenges", {}),
+                        "visionScore": participant.get("visionScore"),
+                        "wardsKilled": participant.get("wardsKilled"),
+                        "wardsPlaced": participant.get("wardsPlaced"),
+                        "totalMinionsKilled": participant.get("totalMinionsKilled"),
+                        "neutralMinionsKilled": participant.get("neutralMinionsKilled", 0),
+                        "totalDamageDealtToChampions": participant.get("totalDamageDealtToChampions"),
+                        "goldEarned": participant.get("goldEarned"),
+                        "summoner1Id": participant.get("summoner1Id"), # Add summoner spell 1 ID
+                        "summoner2Id": participant.get("summoner2Id"), # Add summoner spell 2 ID
+                        "item0": participant.get("item0"),
+                        "item1": participant.get("item1"),
+                        "item2": participant.get("item2"),
+                        "item3": participant.get("item3"),
+                        "item4": participant.get("item4"),
+                        "item5": participant.get("item5"),
+                        "item6": participant.get("item6"), # Trinket slot
+                    })
+
                 details.append({
-                    "matchId": result.get("matchId"),
+                    "matchId": result.get("metadata", {}).get("matchId"),
                     "gameMode": info.get("gameMode"),
+                    "queueId": info.get("queueId"),
                     "gameDuration": info.get("gameDuration"),
-                    "participants": info.get("participants", [])
+                    "participants": participants_data # Use the processed participant data
                 })
         
         return details

@@ -102,6 +102,24 @@ class RiotAPI:
             print(f"Timeline 요청 예외: {e}")
             return None
 
+    def _get_summoner_id_by_puuid(self, puuid):
+        """PUUID로 Summoner ID 가져오기"""
+        url = f"https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}"
+        response = requests.get(url, headers=self.headers)
+        if response.status_code == 200:
+            return response.json()['id'] # encryptedSummonerId
+        return None
+
+    def get_active_game_by_summoner_id(self, encrypted_summoner_id):
+        """Summoner ID로 현재 진행 중인 게임 정보 가져오기"""
+        url = f"https://kr.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/{encrypted_summoner_id}"
+        response = requests.get(url, headers=self.headers)
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404: # Not in game
+            return None 
+        return None
+
     def get_all_match_ids(self, puuid, n_wins, n_losses):
         """모든 랭크 게임의 Match ID를 수집합니다."""
         # 캐시 확인

@@ -21,11 +21,13 @@ from analyzer import analyze_game
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from typing import Any
+import requests # Added for Data Dragon
+import json # Added for Data Dragon
 
 app = FastAPI()
 # 프론트엔드(Next.js)와 통신 허용
 app.add_middleware(
-    CORSMiddleware, 
+    CORSMiddleware,
     allow_origins=[
         "https://lol-ai-project.vercel.app",
         "https://lol-ai-project-git-master-tuosm9390s-projects.vercel.app",
@@ -43,15 +45,160 @@ async_riot_client: Any = None
 if API_KEY and ASYNC_AVAILABLE and AsyncRiotAPI is not None:
     async_riot_client = AsyncRiotAPI(API_KEY)
 
+# Data Dragon global variables
+DDRAGON_VERSION: str = ""
+SUMMONER_SPELLS: Dict[str, Any] = {}
+ITEMS: Dict[str, Any] = {}
+
+def get_latest_ddragon_version():
+    try:
+        response = requests.get("https://ddragon.leagueoflegends.com/api/versions.json")
+        response.raise_for_status()
+        return response.json()[0] # Get the latest version
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching Data Dragon version: {e}")
+        return "13.24.1" # Fallback to a known version
+
+def load_ddragon_data(version: str):
+    global SUMMONER_SPELLS, ITEMS, DDRAGON_VERSION
+    DDRAGON_VERSION = version
+    base_url = f"https://ddragon.leagueoflegends.com/cdn/{version}/data/ko_KR" # Using Korean locale
+
+    # Load Summoner Spells
+    try:
+        response = requests.get(f"{base_url}/summoner.json")
+        response.raise_for_status()
+        summoner_data = response.json().get("data", {})
+        # Reformat for easier lookup by ID (integer)
+        SUMMONER_SPELLS = {str(spell_info['id']): spell_info for spell_id, spell_info in summoner_data.items()}
+        print(f"Loaded {len(SUMMONER_SPELLS)} summoner spells.")
+    except requests.exceptions.RequestException as e:
+        print(f"Error loading summoner spells: {e}")
+        SUMMONER_SPELLS = {}
+
+    # Load Items
+    try:
+        response = requests.get(f"{base_url}/item.json")
+        response.raise_for_status()
+        item_data = response.json().get("data", {})
+        ITEMS = item_data
+        print(f"Loaded {len(ITEMS)} items.")
+    except requests.exceptions.RequestException as e:
+        print(f"Error loading items: {e}")
+        ITEMS = {}
+
+# Load Data Dragon data on startup
+latest_version = get_latest_ddragon_version()
+load_ddragon_data(latest_version)
+
+
+# Queue ID Mapping
+QUEUE_MAPPING = {
+    400: "일반 게임",
+    420: "솔로 랭크",
+    430: "일반 게임",
+    440: "자유 랭크",
+    450: "칼바람 나락",
+    700: "격전",
+    800: "AI 대전",
+    810: "AI 대전",
+    820: "AI 대전",
+    830: "AI 대전",
+    840: "AI 대전",
+    850: "AI 대전",
+    900: "URF",
+    920: "포로 왕",
+    1020: "단일 챔피언",
+    1030: "오디세이",
+    1040: "폭풍",
+    1050: "최고의 팀",
+    1060: "돌격! 넥서스",
+    1070: "단일 챔피언",
+    1090: "전략적 팀 전투",
+    1100: "전략적 팀 전투 랭크",
+    1110: "전략적 팀 전투 Hyper Roll",
+    1111: "전략적 팀 전투 Double Up",
+    1200: "넥서스 블리츠",
+    1300: "돌격! 넥서스",
+    1400: "궁극기 주문서",
+    1900: "URF",
+    2000: "튜토리얼",
+    2010: "튜토리얼",
+    2020: "튜토리얼",
+}
+
 @app.get("/")
 async def root():
-    return {"message": "LoL AI Backend API", "docs": "/docs"}
-
-@app.get("/analyze-user/{full_id}")
-async def analyze_user(full_id: str):
-    if not riot_client:
-        return {"error": "RIOT_API_KEY가 설정되지 않았습니다."}
-    try:
+            return {"message": "LoL AI Backend API", "docs": "/docs"}
+    
+    @app.get("/current-game/{full_id}")
+    async def get_current_game(full_id: str):
+        if not riot_client:
+            return {"error": "RIOT_API_KEY가 설정되지 않았습니다."}
+        
+        if "#" not in full_id:
+                return {"error": "Riot ID 형식은 Name#Tag 여야 합니다."}
+            
+        game_name, tag_line = full_id.split("#")
+        
+        puuid = riot_client.get_puuid_by_riot_id(game_name, tag_line)
+        if not puuid:
+            return {"error": "해당 Riot ID를 찾을 수 없습니다."}
+        
+        encrypted_summoner_id = riot_client._get_summoner_id_by_puuid(puuid)
+        if not encrypted_summoner_id:
+            return {"error": "소환사 ID를 찾을 수 없습니다."}
+        
+        active_game_data = riot_client.get_active_game_by_summoner_id(encrypted_summoner_id)
+        
+        if active_game_data is None:
+            return {"status": "not_in_game", "message": f"{game_name}#{tag_line}님은 현재 게임 중이 아닙니다."}
+        
+        # Process active game data for frontend display
+        processed_participants = []
+        for p in active_game_data.get("participants", []):
+            # Summoner Spells
+            summoner_spell_1_id = str(p.get("spell1Id"))
+            summoner_spell_2_id = str(p.get("spell2Id"))
+            
+            spell1_info = SUMMONER_SPELLS.get(summoner_spell_1_id)
+            spell2_info = SUMMONER_SPELLS.get(summoner_spell_2_id)
+    
+            processed_spell1 = {
+                "id": summoner_spell_1_id,
+                "name": spell1_info['name'] if spell1_info else "Unknown",
+                "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell1_info['image']['full']}" if spell1_info else ""
+            }
+            processed_spell2 = {
+                "id": summoner_spell_2_id,
+                "name": spell2_info['name'] if spell2_info else "Unknown",
+                "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell2_info['image']['full']}" if spell2_info else ""
+            }
+    
+            processed_participants.append({
+                "summonerName": p.get("summonerName"),
+                "championName": p.get("championName"),
+                "teamId": p.get("teamId"),
+                "summonerSpell1": processed_spell1,
+                "summonerSpell2": processed_spell2,
+                # Add other relevant active game participant data
+            })
+    
+        return {
+            "status": "in_game",
+            "gameId": active_game_data.get("gameId"),
+            "gameMode": active_game_data.get("gameMode"),
+            "gameType": active_game_data.get("gameType"),
+            "gameStartTime": active_game_data.get("gameStartTime"),
+            "mapId": active_game_data.get("mapId"),
+            "queueType": QUEUE_MAPPING.get(active_game_data.get("gameQueueConfigId"), "알 수 없는 모드"),
+            "participants": processed_participants,
+        }
+    
+    @app.get("/analyze-user/{full_id}")
+    async def analyze_user(full_id: str):
+        if not riot_client:
+            return {"error": "RIOT_API_KEY가 설정되지 않았습니다."}    try:
         # 1. ID 분리 (예: "가나다#KR1")
         if "#" not in full_id:
             return {"error": "Riot ID 형식은 Name#Tag 여야 합니다."}
@@ -96,18 +243,7 @@ async def analyze_user(full_id: str):
                 # 동기 방식으로 fallback
                 all_ids = riot_client.get_all_match_ids(puuid, solo_rank['wins'], solo_rank['losses'])
                 match_details = riot_client.get_match_details_batch(all_ids[:20])
-            #     if my_stats:
-            #         processed_matches.append({
-            #             "matchId": match['matchId'],
-            #             "win": my_stats['win'],
-            #             "championName": my_stats['championName'],
-            #             "kills": my_stats['kills'],
-            #             "deaths": my_stats['deaths'],
-            #             "assists": my_stats['assists'],
-            #             "gameDuration": match['gameDuration'],
-            #             "participants": match['participants'],
-            #         })
-
+            
             processed_matches = []
             for match in match_details:
                 # 1. 내 정보 찾기 (요약 카드용)
@@ -116,6 +252,41 @@ async def analyze_user(full_id: str):
                 # 2. 전체 참가자 10명 데이터 정제 (상세 드롭다운용)
                 participants_list = []
                 for p in match['participants']:
+                    # Summoner Spells
+                    summoner_spell_1_id = str(p.get("summoner1Id"))
+                    summoner_spell_2_id = str(p.get("summoner2Id"))
+                    
+                    spell1_info = SUMMONER_SPELLS.get(summoner_spell_1_id)
+                    spell2_info = SUMMONER_SPELLS.get(summoner_spell_2_id)
+
+                    processed_spell1 = {
+                        "id": summoner_spell_1_id,
+                        "name": spell1_info['name'] if spell1_info else "Unknown",
+                        "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell1_info['image']['full']}" if spell1_info else ""
+                    }
+                    processed_spell2 = {
+                        "id": summoner_spell_2_id,
+                        "name": spell2_info['name'] if spell2_info else "Unknown",
+                        "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/spell/{spell2_info['image']['full']}" if spell2_info else ""
+                    }
+
+                    # Items
+                    item_ids = [p.get(f"item{i}") for i in range(7)]
+                    processed_items = []
+                    for item_id in item_ids:
+                        if item_id and item_id != 0: # 0 is often for empty item slots
+                            item_info = ITEMS.get(str(item_id))
+                            if item_info:
+                                processed_items.append({
+                                    "id": item_id,
+                                    "name": item_info.get('name'),
+                                    "icon": f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img/item/{item_id}.png"
+                                })
+                            else:
+                                processed_items.append({"id": item_id, "name": "Unknown Item", "icon": ""})
+                        else:
+                            processed_items.append(None) # Represent empty slot
+
                     participants_list.append({
                         "puuid": p.get("puuid"), # 내 정보 하이라이트용
                         "teamId": p.get("teamId"),
@@ -133,12 +304,17 @@ async def analyze_user(full_id: str):
                         "kills": p.get('kills'),
                         "deaths": p.get('deaths'),
                         "assists": p.get('assists'),
+                        "summonerSpell1": processed_spell1, # Add processed spell 1
+                        "summonerSpell2": processed_spell2, # Add processed spell 2
+                        "items": processed_items, # Add processed items
                     })
 
                 if my_stats:
                     processed_matches.append({
                         "matchId": match['matchId'],
-                        "gameMode": match['gameMode'], # Add gameMode here
+                        "gameMode": match['gameMode'],
+                        "queueId": match['queueId'], # Add queueId here
+                        "queueType": QUEUE_MAPPING.get(match['queueId'], "알 수 없는 모드"), # Map queueId to human-readable
                         "gameDuration": match['gameDuration'],
                         "my_stats": { # 기존 요약 카드에 쓸 데이터
                             "win": my_stats['win'],
