@@ -68,16 +68,22 @@ class RiotAPI {
   private async ensureChampionData() {
     if (!this.championData) {
       try {
-        const url = `https://ddragon.leagueoflegends.com/cdn/16.3.1/data/en_US/champion.json`; // Use a specific DDragon version
+        // Get latest DDragon version dynamically
+        const versionsResponse = await fetch(`https://ddragon.leagueoflegends.com/api/versions.json`);
+        const versions = await versionsResponse.json();
+        const latestVersion = versions[0]; // Latest version is always the first one
+
+        const url = `https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/en_US/champion.json`;
         const response = await fetch(url);
         if (!response.ok) {
           throw new Error(`Failed to fetch champion data: ${response.statusText}`);
         }
         const data = await response.json();
         this.championData = data.data;
+        console.log(`[DEBUG] Loaded champion data from DDragon version: ${latestVersion}`);
       } catch (error) {
         console.error("Error fetching champion data:", error);
-        this.championData = {}; // Set to empty object to prevent repeated fetching on error
+        this.championData = {};
       }
     }
   }
