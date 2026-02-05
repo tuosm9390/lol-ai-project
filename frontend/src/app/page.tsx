@@ -112,7 +112,7 @@ interface AnalysisData {
   match_details: MatchDetail[];
 }
 
-// [1. Helper 함수들 - 컴포넌트 외부 선언]
+// Helper 함수들 - 컴포넌트 외부 선언]
 const formatNumber = (num: number | undefined): string => (num ? num.toLocaleString() : '0');
 
 const calculateTeamKDA = (participants: Participant[] | undefined): string => {
@@ -138,6 +138,11 @@ const formatGameMode = (gameMode: string, queueType: string): string => {
     default:
       return gameMode;
   }
+};
+
+const capitalizeFirstLetter = (str: string): string => {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
 // [2. TeamTable 컴포넌트 - 컴포넌트 외부 선언]
@@ -348,11 +353,9 @@ export default function Home() {
               {(() => {
                 const userTier = analysis.league?.[0]?.tier;
                 // 'UNRANKED' 값이 백엔드에서 오지 않을 수도 있으므로, league[0] 자체가 없거나 tier 값이 없으면 UNRANKED로 처리
-                const tierToDisplay = (analysis.league?.[0] && userTier && userTier !== 'UNRANKED') ? userTier : 'UNRANKED';
-                const imageUrl = `/public/Ranked_Emblems_Latest/Rank=${tierToDisplay}.png`;
+                const tierToDisplay = (analysis.league?.[0] && userTier && userTier !== 'UNRANKED') ? capitalizeFirstLetter(userTier) : 'UNRANKED';
+                const imageUrl = `/Ranked_Emblems_Latest/Rank=${tierToDisplay}.png`;
 
-                console.log(`[DEBUG_TIER] User Tier: ${userTier}, Processed Tier: ${tierToDisplay}, Image URL: ${imageUrl}`);
-                
                 return (
                   <img
                     src={imageUrl}
