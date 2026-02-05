@@ -112,7 +112,7 @@ class RiotAPI:
 
     def get_active_game_by_summoner_id(self, encrypted_summoner_id):
         """Summoner ID로 현재 진행 중인 게임 정보 가져오기"""
-        url = f"https://kr.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/{encrypted_summoner_id}"
+        url = f"https://kr.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{encrypted_summoner_id}"
         response = requests.get(url, headers=self.headers)
         if response.status_code == 200:
             return response.json()
