@@ -464,9 +464,7 @@ export default function Home() {
                               <th className="p-3 w-[18%] text-left pl-6">Champion / Player</th>
                               <th className="p-3 w-[12%] text-center">KDA</th>
                               <th className="p-3 w-[12%] text-center">Damage</th>
-                              <th className="p-3 w-[8%] text-center">Gold</th>
-                              <th className="p-3 w-[8%] text-center">CS</th>
-                              <th className="p-3 w-[12%] text-center">Vision</th>
+                              <th className="p-3 w-[28%] text-center">Stats (Gold/CS/Vision)</th> {/* Combined */}
                               <th className="p-3 w-[10%] text-center">Spells</th>
                               <th className="p-3 w-[20%] text-right pr-6">Items</th>
                             </tr>
@@ -483,7 +481,7 @@ export default function Home() {
                                   {/* 팀 구분 헤더 (1번째, 6번째 행 직전에 표시) */}
                                   {isTeamFirstRow && (
                                     <tr key={`header-${idx}`} className={`${p.win ? 'bg-blue-50/50 dark:bg-blue-900/50' : 'bg-red-50/50 dark:bg-red-900/50'} border-y border-gray-100 dark:border-gray-700`}>
-                                      <td colSpan={8} className="px-6 py-2">
+                                      <td colSpan={6} className="px-6 py-2">
                                         <div className="flex justify-between items-center">
                                           <span className={`font-black text-[11px] uppercase ${p.win ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
                                             {isBlueTeam ? 'Blue Team' : 'Red Team'} — {p.win ? 'Victory' : 'Defeat'}
@@ -509,7 +507,7 @@ export default function Home() {
                                           alt=""
                                         />
                                         <div className="flex flex-col truncate">
-                                          <span className="text-gray-800 text-[12px] truncate dark:text-gray-100">{p.summonerName.split('#')[0]}</span>
+                                          <span className="text-gray-800 text-[12px] truncate dark:text-gray-100">{p.summonerName}</span>
                                           <span className="text-[9px] text-gray-400 uppercase font-mono dark:text-gray-500">{p.teamPosition || 'Unknown'}</span>
                                         </div>
                                       </div>
@@ -527,13 +525,17 @@ export default function Home() {
                                       </div>
                                     </td>
                                     <td className="p-3 text-center text-gray-600 font-medium text-[12px] dark:text-gray-300">
-                                      {formatNumber(p.gold)}
-                                    </td>
-                                    <td className="p-3 text-center text-gray-600 font-medium text-[12px] dark:text-gray-300">
-                                      {formatNumber(p.cs)}
-                                    </td>
-                                    <td className="p-3 text-center text-gray-600 font-medium text-[12px] dark:text-gray-300">
-                                      {p.visionScore} ({p.wards})
+                                      {/* Combined Stats */}
+                                      <div className="flex flex-col gap-1 items-center">
+                                        <div className="text-[10px]">💰 {formatNumber(p.gold)}</div>
+                                        <div className="text-[10px]">🔪 {formatNumber(p.cs)} (
+                                          {p.cs && match.gameDuration && match.gameDuration > 0
+                                            ? (p.cs / (match.gameDuration / 60)).toFixed(1)
+                                            : '0'}
+                                          )
+                                        </div>
+                                        <div className="text-[10px]">👁️ {p.visionScore} ({p.wards})</div>
+                                      </div>
                                     </td>
                                     <td className="p-3 text-center">
                                       <div className="flex flex-col items-center gap-1">
