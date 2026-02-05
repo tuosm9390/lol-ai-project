@@ -88,10 +88,12 @@ class RiotAPI {
     if (this.championData) {
       for (const champName in this.championData) {
         if (this.championData[champName].key == championId) {
+          console.log(`[DEBUG] Mapping Champion ID: ${championId} to Name: ${this.championData[champName].id}`); // Debug log
           return this.championData[champName].id; // 'id' is the champion name in DDragon data
         }
       }
     }
+    console.log(`[DEBUG] Failed to map Champion ID: ${championId}. Returning "Unknown".`); // Debug log
     return "Unknown"; // Fallback for unknown champion IDs
   }
 
