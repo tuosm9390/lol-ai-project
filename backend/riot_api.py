@@ -2,13 +2,26 @@ import time
 import requests
 from urllib import parse
 from cache_manager import CacheManager
+import os # <-- os 모듈 임포트 추가
 
 class RiotAPI:
     def __init__(self, api_key):
         self.api_key = api_key
         self.base_url = "https://asia.api.riotgames.com"
         self.headers = {"X-Riot-Token": self.api_key}
-        self.cache = CacheManager()
+
+        # Redis 연결 정보 환경 변수에서 가져오기
+        redis_host = os.environ.get("REDIS_HOST", "localhost")
+        redis_port = int(os.environ.get("REDIS_PORT", 6379))
+        redis_db = int(os.environ.get("REDIS_DB", 0))
+        redis_password = os.environ.get("REDIS_PASSWORD", None)
+
+        self.cache = CacheManager(
+            host=redis_host,
+            port=redis_port,
+            db=redis_db,
+            password=redis_password
+        )
 
     def get_puuid_by_riot_id(self, game_name, tag_line):
         """1단계: 계정명#태그로 PUUID(고유 식별자) 가져오기"""
