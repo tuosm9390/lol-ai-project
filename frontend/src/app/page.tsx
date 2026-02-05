@@ -345,19 +345,22 @@ export default function Home() {
           {/* 1. 유저 기본 정보 및 티어 카드 */}
           <div className="p-6 bg-white border rounded-2xl shadow-sm flex items-center justify-between dark:bg-gray-800 dark:border-gray-700">
             <div className="flex items-center gap-4"> {/* flex container for image and text */}
-              {analysis.league && analysis.league[0] && analysis.league[0].tier !== 'UNRANKED' ? (
-                <img
-                  src={`/Ranked_Emblems_Latest/Rank=${analysis.league[0].tier}.png`}
-                  alt={`${analysis.league[0].tier} tier emblem`}
-                  className="w-16 h-16 object-contain" // 이미지 크기 및 스타일 조정
-                />
-              ) : (
-                <img
-                  src={`/Ranked_Emblems_Latest/Rank=UNRANKED.png`} // 언랭크 티어 이미지
-                  alt="Unranked tier emblem"
-                  className="w-16 h-16 object-contain"
-                />
-              )}
+              {(() => {
+                const userTier = analysis.league?.[0]?.tier;
+                // 'UNRANKED' 값이 백엔드에서 오지 않을 수도 있으므로, league[0] 자체가 없거나 tier 값이 없으면 UNRANKED로 처리
+                const tierToDisplay = (analysis.league?.[0] && userTier && userTier !== 'UNRANKED') ? userTier : 'UNRANKED';
+                const imageUrl = `/Ranked_Emblems_Latest/Rank=${tierToDisplay}.png`;
+
+                console.log(`[DEBUG_TIER] User Tier: ${userTier}, Processed Tier: ${tierToDisplay}, Image URL: ${imageUrl}`);
+                
+                return (
+                  <img
+                    src={imageUrl}
+                    alt={`${tierToDisplay} tier emblem`}
+                    className="w-16 h-16 object-contain"
+                  />
+                );
+              })()}
               <div>
                 <h2 className="text-2xl font-black text-gray-800 dark:text-gray-100">
                   {analysis.user_info.name} <span className="text-gray-400 dark:text-gray-500">#{analysis.user_info.tag}</span>
