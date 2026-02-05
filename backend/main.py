@@ -49,6 +49,8 @@ if API_KEY and ASYNC_AVAILABLE and AsyncRiotAPI is not None:
 DDRAGON_VERSION: str = ""
 SUMMONER_SPELLS: Dict[str, Any] = {}
 ITEMS: Dict[str, Any] = {}
+CHAMPIONS: Dict[str, Any] = {} # Add global variable for Champions
+CHAMPION_ID_TO_NAME: Dict[int, str] = {} # Add global map for ID to Name
 
 def get_latest_ddragon_version():
     print("--- Data Dragon 버전 확인 시작 ---")
@@ -63,7 +65,7 @@ def get_latest_ddragon_version():
         return "13.24.1" # Fallback to a known version
 
 def load_ddragon_data(version: str):
-    global SUMMONER_SPELLS, ITEMS, DDRAGON_VERSION
+    global SUMMONER_SPELLS, ITEMS, DDRAGON_VERSION, CHAMPIONS, CHAMPION_ID_TO_NAME
     DDRAGON_VERSION = version
     base_url = f"https://ddragon.leagueoflegends.com/cdn/{version}/data/ko_KR" # Using Korean locale
     print(f"--- Data Dragon 데이터 로드 시작 (버전: {version}, Locale: ko_KR) ---")
@@ -103,7 +105,39 @@ def load_ddragon_data(version: str):
     except Exception as e:
         print(f"알 수 없는 아이템 로드 에러: {e}")
         ITEMS = {}
-    print("--- Data Dragon 데이터 로드 완료 ---")
+        
+    # Load Champions
+    try:
+        print(f"챔피언 데이터 로드 시도: {base_url}/champion.json")
+        response = requests.get(f"{base_url}/champion.json")
+        response.raise_for_status()
+        champion_data = response.json().get("data", {})
+        
+        CHAMPIONS = champion_data
+        
+        # Build ID to Name map
+        for champ_name, champ_info in CHAMPIONS.items(): # Changed from champ_id to champ_name to iterate correctly
+            CHAMPION_ID_TO_NAME[int(champ_info['key'])] = champ_info['id']
+        
+        print(f"로드된 챔피언 개수: {len(CHAMPIONS)}")
+    except requests.exceptions.RequestException as e:
+        print(f"챔피언 데이터 로드 중 에러: {e}")
+        CHAMPIONS = {}
+        CHAMPION_ID_TO_NAME = {}
+    except json.JSONDecodeError as e:
+        print(f"챔피언 JSON 파싱 에러: {e}")
+        CHAMPIONS = {}
+        CHAMPION_ID_TO_NAME = {}
+    except Exception as e:
+        print(f"알 수 없는 챔피언 로드 에러: {e}")
+        CHAMPIONS = {}
+        CHAMPION_ID_TO_NAME = {}
+
+def get_champion_name_by_id(champion_id: int) -> str:
+    if champion_id == -1: # Banned champion
+        return "Unknown"
+    return CHAMPION_ID_TO_NAME.get(champion_id, "Unknown")
+
 
 # Load Data Dragon data on startup
 latest_version = get_latest_ddragon_version()
@@ -329,21 +363,36 @@ async def analyze_user(full_id: str):
                     })
 
                 if my_stats:
+                    processed_teams = []
+                    for team in match.get('teams', []): # teams 데이터 순회
+                        processed_bans = []
+                        for ban in team.get('bans', []): # 각 팀의 bans 순회
+                            ban_champion_id = ban.get('championId', -1)
+                            ban_champion_name = get_champion_name_by_id(ban_champion_id)
+                            processed_bans.append({
+                                **ban, # 기존 ban 정보 유지
+                                "championName": ban_champion_name # championName 추가
+                            })
+                        processed_teams.append({
+                            **team, # 기존 team 정보 유지
+                            "bans": processed_bans # championName이 추가된 bans로 교체
+                        })
+
                     processed_matches.append({
                         "matchId": match['matchId'],
                         "gameMode": match['gameMode'],
-                        "queueId": match['queueId'], # Add queueId here
-                        "queueType": QUEUE_MAPPING.get(match['queueId'], "알 수 없는 모드"), # Map queueId to human-readable
+                        "queueId": match['queueId'],
+                        "queueType": QUEUE_MAPPING.get(match['queueId'], "알 수 없는 모드"),
                         "gameDuration": match['gameDuration'],
-                        "my_stats": { # 기존 요약 카드에 쓸 데이터
+                        "my_stats": {
                             "win": my_stats['win'],
                             "championName": my_stats['championName'],
                             "kills": my_stats['kills'],
                             "deaths": my_stats['deaths'],
                             "assists": my_stats['assists'],
                         },
-                        "participants": participants_list, # 10명 전체 데이터
-                        "teams": match['teams'] # Add teams data here
+                        "participants": participants_list,
+                        "teams": processed_teams # 변환된 teams 데이터 사용
                     })
 
             analysis_result = analyze_game(timeline_data)
