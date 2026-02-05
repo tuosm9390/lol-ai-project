@@ -347,13 +347,13 @@ export default function Home() {
             <div className="flex items-center gap-4"> {/* flex container for image and text */}
               {analysis.league && analysis.league[0] && analysis.league[0].tier !== 'UNRANKED' ? (
                 <img
-                  src={`/Ranked Emblems Latest/Rank=${analysis.league[0].tier}.png`}
+                  src={`/Ranked_Emblems_Latest/Rank=${analysis.league[0].tier}.png`}
                   alt={`${analysis.league[0].tier} tier emblem`}
                   className="w-16 h-16 object-contain" // 이미지 크기 및 스타일 조정
                 />
               ) : (
                 <img
-                  src={`/Ranked Emblems Latest/Rank=UNRANKED.png`} // 언랭크 티어 이미지
+                  src={`/Ranked_Emblems_Latest/Rank=UNRANKED.png`} // 언랭크 티어 이미지
                   alt="Unranked tier emblem"
                   className="w-16 h-16 object-contain"
                 />
