@@ -344,17 +344,32 @@ export default function Home() {
 
           {/* 1. 유저 기본 정보 및 티어 카드 */}
           <div className="p-6 bg-white border rounded-2xl shadow-sm flex items-center justify-between dark:bg-gray-800 dark:border-gray-700">
-            <div>
-              <h2 className="text-2xl font-black text-gray-800 dark:text-gray-100">
-                {analysis.user_info.name} <span className="text-gray-400 dark:text-gray-500">#{analysis.user_info.tag}</span>
-              </h2>
-              {analysis.league && analysis.league[0] ? (
-                <p className="text-blue-600 font-bold uppercase tracking-wider dark:text-blue-400">
-                  {analysis.league[0].tier} {analysis.league[0].rank} — {analysis.league[0].leaguePoints} LP
-                </p>
+            <div className="flex items-center gap-4"> {/* flex container for image and text */}
+              {analysis.league && analysis.league[0] && analysis.league[0].tier !== 'UNRANKED' ? (
+                <img
+                  src={`/Ranked Emblems Latest/Rank=${analysis.league[0].tier}.png`}
+                  alt={`${analysis.league[0].tier} tier emblem`}
+                  className="w-16 h-16 object-contain" // 이미지 크기 및 스타일 조정
+                />
               ) : (
-                <p className="text-gray-400 dark:text-gray-500">Unranked</p>
+                <img
+                  src={`/Ranked Emblems Latest/Rank=UNRANKED.png`} // 언랭크 티어 이미지
+                  alt="Unranked tier emblem"
+                  className="w-16 h-16 object-contain"
+                />
               )}
+              <div>
+                <h2 className="text-2xl font-black text-gray-800 dark:text-gray-100">
+                  {analysis.user_info.name} <span className="text-gray-400 dark:text-gray-500">#{analysis.user_info.tag}</span>
+                </h2>
+                {analysis.league && analysis.league[0] ? (
+                  <p className="text-blue-600 font-bold uppercase tracking-wider dark:text-blue-400">
+                    {analysis.league[0].tier} {analysis.league[0].rank} — {analysis.league[0].leaguePoints} LP
+                  </p>
+                ) : (
+                  <p className="text-gray-400 dark:text-gray-500">Unranked</p>
+                )}
+              </div>
             </div>
             <div className="text-right">
               <p className="text-sm text-black font-medium dark:text-gray-200">최근 승률</p>
