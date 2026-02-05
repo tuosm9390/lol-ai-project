@@ -433,7 +433,7 @@ export default function Home() {
                             <div className="flex items-center gap-2 mb-2">
                               <span className="text-xs text-gray-600 dark:text-gray-400">밴:</span>
                               {team.bans.map((ban, banIdx) => (
-                                ban.championId !== -1 ? (
+                                ban.championId !== -1 && ban.championName !== "Unknown" ? (
                                   <img
                                     key={banIdx}
                                     src={`https://ddragon.leagueoflegends.com/cdn/16.3.1/img/champion/${ban.championName}.png`} // Use championName
@@ -461,12 +461,12 @@ export default function Home() {
                         <table className="w-full text-sm table-fixed border-collapse">
                           <thead className="bg-gray-50 dark:bg-gray-700 text-[11px] text-gray-400 uppercase font-bold border-b dark:border-gray-600">
                             <tr>
-                              <th className="p-3 w-[18%] text-left pl-6">Champion / Player</th>
+                              <th className="p-3 w-[25%] text-left pl-6">Champion / Player</th>
                               <th className="p-3 w-[12%] text-center">KDA</th>
-                              <th className="p-3 w-[12%] text-center">Damage</th>
-                              <th className="p-3 w-[28%] text-center">Stats (Gold/CS/Vision)</th> {/* Combined */}
                               <th className="p-3 w-[10%] text-center">Spells</th>
                               <th className="p-3 w-[20%] text-right pr-6">Items</th>
+                              <th className="p-3 w-[12%] text-center">Damage</th>
+                              <th className="p-3 w-[21%] text-center">Stats (Gold/CS/Vision)</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -499,7 +499,7 @@ export default function Home() {
                                   ${p.win ? 'hover:bg-blue-50/30 dark:hover:bg-blue-900/30' : 'hover:bg-red-50/30 dark:hover:bg-red-900/30'}
                                   ${p.puuid === analysis.user_info.puuid ? 'bg-yellow-50 font-semibold ring-inset ring-1 ring-yellow-200 dark:bg-yellow-900/30 dark:ring-yellow-700' : ''}`}
                                   >
-                                    <td className="p-3 pl-6">
+                                    <td className="p-3 pl-6 w-[25%]"> {/* Adjusted width */}
                                       <div className="flex items-center gap-3">
                                         <img
                                           src={`https://ddragon.leagueoflegends.com/cdn/16.3.1/img/champion/${p.championName}.png`}
@@ -512,11 +512,33 @@ export default function Home() {
                                         </div>
                                       </div>
                                     </td>
-                                    <td className="p-3 text-center">
+                                    <td className="p-3 text-center w-[12%]"> {/* KDA */}
                                       <div className="text-[12px] font-bold text-gray-700 dark:text-gray-200">{p.kda_str}</div>
                                       <div className="text-[10px] text-gray-400 dark:text-gray-500">{p.kda_score?.toFixed(2)}</div>
                                     </td>
-                                    <td className="p-3">
+                                    <td className="p-3 text-center w-[10%]"> {/* Spells */}
+                                      <div className="flex flex-col items-center gap-1">
+                                        {p.summonerSpell1 && p.summonerSpell1.icon && (
+                                          <img src={p.summonerSpell1.icon} alt={p.summonerSpell1.name} className="w-5 h-5 rounded" />
+                                        )}
+                                        {p.summonerSpell2 && p.summonerSpell2.icon && (
+                                          <img src={p.summonerSpell2.icon} alt={p.summonerSpell2.name} className="w-5 h-5 rounded" />
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="p-3 pr-6 text-right w-[20%]"> {/* Items */}
+                                      <div className="grid grid-cols-3 gap-1 justify-items-end"> {/* Modified for 3x2 grid */}
+                                        {Array.from({ length: 6 }).map((_, itemIdx) => {
+                                          const item = p.items?.[itemIdx];
+                                          return item ? (
+                                            <img key={itemIdx} src={item.icon} alt={item.name} className="w-6 h-6 rounded" />
+                                          ) : (
+                                            <div key={itemIdx} className="w-6 h-6 rounded bg-gray-200 dark:bg-gray-700"></div>
+                                          );
+                                        })}
+                                      </div>
+                                    </td>
+                                    <td className="p-3 w-[12%]"> {/* Damage */}
                                       <div className="w-full max-w-[80px] mx-auto text-center">
                                         <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mb-1 dark:bg-gray-600">
                                           <div className="h-full bg-red-400" style={{ width: `${Math.min((p.damage || 0) / 500, 100)}%` }}></div>
@@ -524,7 +546,7 @@ export default function Home() {
                                         <span className="text-[10px] text-gray-500 font-mono dark:text-gray-400">{formatNumber(p.damage)}</span>
                                       </div>
                                     </td>
-                                    <td className="p-3 text-center text-gray-600 font-medium text-[12px] dark:text-gray-300">
+                                    <td className="p-3 text-center w-[21%] text-gray-600 font-medium text-[12px] dark:text-gray-300">
                                       {/* Combined Stats */}
                                       <div className="flex flex-col gap-1 items-center">
                                         <div className="text-[10px]">💰 {formatNumber(p.gold)}</div>
@@ -535,28 +557,6 @@ export default function Home() {
                                           )
                                         </div>
                                         <div className="text-[10px]">👁️ {p.visionScore} ({p.wards})</div>
-                                      </div>
-                                    </td>
-                                    <td className="p-3 text-center">
-                                      <div className="flex flex-col items-center gap-1">
-                                        {p.summonerSpell1 && p.summonerSpell1.icon && (
-                                          <img src={p.summonerSpell1.icon} alt={p.summonerSpell1.name} className="w-5 h-5 rounded" />
-                                        )}
-                                        {p.summonerSpell2 && p.summonerSpell2.icon && (
-                                          <img src={p.summonerSpell2.icon} alt={p.summonerSpell2.name} className="w-5 h-5 rounded" />
-                                        )}
-                                      </div>
-                                    </td>
-                                    <td className="p-3 pr-6 text-right">
-                                      <div className="grid grid-cols-3 gap-1 justify-items-end"> {/* Modified for 3x2 grid */}
-                                        {Array.from({ length: 6 }).map((_, itemIdx) => {
-                                          const item = p.items?.[itemIdx];
-                                          return item ? (
-                                            <img key={itemIdx} src={item.icon} alt={item.name} className="w-6 h-6 rounded" />
-                                          ) : (
-                                            <div key={itemIdx} className="w-6 h-6 rounded bg-gray-200 dark:bg-gray-700"></div>
-                                          );
-                                        })}
                                       </div>
                                     </td>
                                   </tr>
