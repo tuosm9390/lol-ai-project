@@ -57,10 +57,42 @@ interface AnalysisData {
 class RiotAPI {
   private apiKey: string;
   private baseUrl: string;
+  private championData: { [key: string]: any } | null = null; // Add championData property
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
     this.baseUrl = "https://asia.api.riotgames.com";
+  }
+
+  // New method to ensure champion data is loaded
+  private async ensureChampionData() {
+    if (!this.championData) {
+      try {
+        const url = `https://ddragon.leagueoflegends.com/cdn/16.3.1/data/en_US/champion.json`; // Use a specific DDragon version
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch champion data: ${response.statusText}`);
+        }
+        const data = await response.json();
+        this.championData = data.data;
+      } catch (error) {
+        console.error("Error fetching champion data:", error);
+        this.championData = {}; // Set to empty object to prevent repeated fetching on error
+      }
+    }
+  }
+
+  // New method to get champion name by ID
+  public async getChampionNameById(championId: number): Promise<string> {
+    await this.ensureChampionData(); // Ensure data is loaded
+    if (this.championData) {
+      for (const champName in this.championData) {
+        if (this.championData[champName].key == championId) {
+          return this.championData[champName].id; // 'id' is the champion name in DDragon data
+        }
+      }
+    }
+    return "Unknown"; // Fallback for unknown champion IDs
   }
 
   async get(url: string): Promise<any> {
@@ -137,12 +169,13 @@ class RiotAPI {
         const url = `${this.baseUrl}/lol/match/v5/matches/${matchId}`;
         const data = await this.get(url);
         
-        const info = data.get('info', {});
+        const info = data.info || {};
         details.push({
-          "matchId": data.get("matchId"),
-          "gameMode": info.get("gameMode"),
-          "gameDuration": info.get("gameDuration"),
-          "participants": info.get("participants", [])
+          "matchId": data.matchId,
+          "gameMode": info.gameMode,
+          "gameDuration": info.gameDuration,
+          "participants": info.participants || [],
+          "teams": info.teams || [] // Add teams data
         });
         
         // Rate limit
@@ -183,15 +216,15 @@ function analyze_game(timeline_data: any, participant_id: string = "1") {
 
     // 데이터 파싱
     for (const frame of frames) {
-      const p_frame = frame['participantFrames'].get(participant_id);
+      const p_frame = frame['participantFrames'][participant_id];
       if (p_frame) {
         positions.push(p_frame['position']);
       }
       
       // 데스 이벤트 수집
       for (const event of frame['events']) {
-        if (event.get('type') === 'CHAMPION_SPECIAL_KILL' || event.get('type') === 'CHAMPION_KILL') {
-          if (event.get('victimId') === parseInt(participant_id)) {
+        if (event.type === 'CHAMPION_SPECIAL_KILL' || event.type === 'CHAMPION_KILL') {
+          if (event.victimId === parseInt(participant_id)) {
             death_timestamps.push(event['timestamp']);
           }
         }
@@ -335,7 +368,19 @@ export async function GET(
               "deaths": my_stats['deaths'],
               "assists": my_stats['assists'],
             },
-            "participants": participants_list
+            "participants": participants_list,
+            "teams": await Promise.all(match['teams'].map(async (team: any) => {
+              const processed_bans = await Promise.all(team['bans'].map(async (ban: any) => {
+                return {
+                  ...ban,
+                  championName: ban.championId !== -1 ? await riot_client.getChampionNameById(ban.championId) : "Unknown"
+                };
+              }));
+              return {
+                ...team,
+                bans: processed_bans
+              };
+            }))
           });
         }
       }
@@ -364,22 +409,22 @@ export async function GET(
           const participants_list = [];
           for (const p of match['participants']) {
             participants_list.push({
-              "puuid": p.get("puuid"),
-              "teamId": p.get("teamId"),
-              "win": p.get("win"),
-              "championName": p.get("championName"),
-              "teamPosition": p.get("teamPosition"),
-              "summonerName": `${p.get('riotIdGameName')}#${p.get('riotIdTagline')}`,
-              "kda_str": `${p.get('kills')}/${p.get('deaths')}/${p.get('assists')}`,
-              "kda_score": p.get("challenges", {}).get("kda", 0),
-              "visionScore": p.get("visionScore"),
-              "wards": `${p.get('wardsKilled')}/${p.get('wardsPlaced')}`,
-              "cs": p.get("totalMinionsKilled") + (p.get("neutralMinionsKilled", 0)),
-              "damage": p.get("totalDamageDealtToChampions"),
-              "gold": p.get("goldEarned"),
-              "kills": p.get('kills'),
-              "deaths": p.get('deaths'),
-              "assists": p.get('assists'),
+              "puuid": p.puuid,
+              "teamId": p.teamId,
+              "win": p.win,
+              "championName": p.championName,
+              "teamPosition": p.teamPosition,
+              "summonerName": `${p.riotIdGameName}#${p.riotIdTagline}`,
+              "kda_str": `${p.kills}/${p.deaths}/${p.assists}`,
+              "kda_score": p.challenges?.kda || 0,
+              "visionScore": p.visionScore,
+              "wards": `${p.wardsKilled}/${p.wardsPlaced}`,
+              "cs": p.totalMinionsKilled + (p.neutralMinionsKilled || 0),
+              "damage": p.totalDamageDealtToChampions,
+              "gold": p.goldEarned,
+              "kills": p.kills,
+              "deaths": p.deaths,
+              "assists": p.assists,
             });
           }
 
@@ -393,7 +438,19 @@ export async function GET(
               "deaths": my_stats['deaths'],
               "assists": my_stats['assists'],
             },
-            "participants": participants_list
+            "participants": participants_list,
+            "teams": await Promise.all(match['teams'].map(async (team: any) => {
+              const processed_bans = await Promise.all(team['bans'].map(async (ban: any) => {
+                return {
+                  ...ban,
+                  championName: ban.championId !== -1 ? await riot_client.getChampionNameById(ban.championId) : "Unknown"
+                };
+              }));
+              return {
+                ...team,
+                bans: processed_bans
+              };
+            }))
           });
         }
       }

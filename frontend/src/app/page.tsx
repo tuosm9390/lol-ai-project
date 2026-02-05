@@ -51,6 +51,7 @@ interface MyStats {
 interface Ban {
   championId: number;
   pickTurn: number;
+  championName?: string; // Add championName
 }
 
 interface Objective {
@@ -435,8 +436,8 @@ export default function Home() {
                                 ban.championId !== -1 ? (
                                   <img
                                     key={banIdx}
-                                    src={`https://ddragon.leagueoflegends.com/cdn/16.3.1/img/champion/${ban.championId}.png`} // Assuming -1 is a valid placeholder for no ban
-                                    alt={`Ban ${banIdx + 1}`}
+                                    src={`https://ddragon.leagueoflegends.com/cdn/16.3.1/img/champion/${ban.championName}.png`} // Use championName
+                                    alt={ban.championName || `Ban ${banIdx + 1}`}
                                     className="w-5 h-5 rounded-full border border-gray-300 dark:border-gray-600"
                                   />
                                 ) : (
@@ -460,12 +461,14 @@ export default function Home() {
                         <table className="w-full text-sm table-fixed border-collapse">
                           <thead className="bg-gray-50 dark:bg-gray-700 text-[11px] text-gray-400 uppercase font-bold border-b dark:border-gray-600">
                             <tr>
-                              <th className="p-3 w-[20%] text-left pl-6">Champion / Player</th>
-                              <th className="p-3 w-[15%] text-center">KDA</th>
-                              <th className="p-3 w-[15%] text-center">Damage</th>
-                              <th className="p-3 w-[10%] text-center">Vision</th>
+                              <th className="p-3 w-[18%] text-left pl-6">Champion / Player</th>
+                              <th className="p-3 w-[12%] text-center">KDA</th>
+                              <th className="p-3 w-[12%] text-center">Damage</th>
+                              <th className="p-3 w-[8%] text-center">Gold</th>
+                              <th className="p-3 w-[8%] text-center">CS</th>
+                              <th className="p-3 w-[12%] text-center">Vision</th>
                               <th className="p-3 w-[10%] text-center">Spells</th>
-                              <th className="p-3 w-[30%] text-right pr-6">Items</th>
+                              <th className="p-3 w-[20%] text-right pr-6">Items</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -480,7 +483,7 @@ export default function Home() {
                                   {/* 팀 구분 헤더 (1번째, 6번째 행 직전에 표시) */}
                                   {isTeamFirstRow && (
                                     <tr key={`header-${idx}`} className={`${p.win ? 'bg-blue-50/50 dark:bg-blue-900/50' : 'bg-red-50/50 dark:bg-red-900/50'} border-y border-gray-100 dark:border-gray-700`}>
-                                      <td colSpan={6} className="px-6 py-2">
+                                      <td colSpan={8} className="px-6 py-2">
                                         <div className="flex justify-between items-center">
                                           <span className={`font-black text-[11px] uppercase ${p.win ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
                                             {isBlueTeam ? 'Blue Team' : 'Red Team'} — {p.win ? 'Victory' : 'Defeat'}
@@ -524,7 +527,13 @@ export default function Home() {
                                       </div>
                                     </td>
                                     <td className="p-3 text-center text-gray-600 font-medium text-[12px] dark:text-gray-300">
-                                      {p.visionScore}
+                                      {formatNumber(p.gold)}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-600 font-medium text-[12px] dark:text-gray-300">
+                                      {formatNumber(p.cs)}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-600 font-medium text-[12px] dark:text-gray-300">
+                                      {p.visionScore} ({p.wards})
                                     </td>
                                     <td className="p-3 text-center">
                                       <div className="flex flex-col items-center gap-1">
@@ -537,14 +546,15 @@ export default function Home() {
                                       </div>
                                     </td>
                                     <td className="p-3 pr-6 text-right">
-                                      <div className="flex flex-wrap justify-end gap-1">
-                                        {p.items?.map((item, itemIdx) => (
-                                          item ? (
+                                      <div className="grid grid-cols-3 gap-1 justify-items-end"> {/* Modified for 3x2 grid */}
+                                        {Array.from({ length: 6 }).map((_, itemIdx) => {
+                                          const item = p.items?.[itemIdx];
+                                          return item ? (
                                             <img key={itemIdx} src={item.icon} alt={item.name} className="w-6 h-6 rounded" />
                                           ) : (
                                             <div key={itemIdx} className="w-6 h-6 rounded bg-gray-200 dark:bg-gray-700"></div>
-                                          )
-                                        ))}
+                                          );
+                                        })}
                                       </div>
                                     </td>
                                   </tr>
