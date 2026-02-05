@@ -4,12 +4,13 @@ except ImportError:
     redis = None
 import json
 from typing import Optional, List, Dict, Any
+import os # os 임포트 추가
 
 # Redis 연결 실패 메시지는 프로세스당 한 번만 출력
 _redis_connection_failed_logged = False
 
 class CacheManager:
-    def __init__(self, host='localhost', port=6379, db=0, password=None):
+    def __init__(self, host='localhost', port=6379, db=0, password=None, url=None): # url 인자 추가
         global _redis_connection_failed_logged
         if redis is None:
             if not _redis_connection_failed_logged:
@@ -19,7 +20,10 @@ class CacheManager:
             return
             
         try:
-            self.redis_client = redis.Redis(host=host, port=port, db=db, password=password, decode_responses=True)
+            if url: # URL이 제공되면 from_url 사용
+                self.redis_client = redis.from_url(url, decode_responses=True)
+            else: # URL이 없으면 개별 인자 사용
+                self.redis_client = redis.Redis(host=host, port=port, db=db, password=password, decode_responses=True)
             self.redis_client.ping()
             print("Redis 연결 성공")
         except Exception as e:
